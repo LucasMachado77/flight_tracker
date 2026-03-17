@@ -3,7 +3,8 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 
 # Database
-sqlalchemy==2.1.0
+# sqlalchemy 2.1.0 não existe como release estável; usamos 2.0.48, que é a última versão estável disponível e compatível com Python 3.13
+sqlalchemy==2.0.48
 alembic==1.13.1
 
 # Data Validation
