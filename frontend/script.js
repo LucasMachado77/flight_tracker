@@ -78,7 +78,7 @@ async function loadRoutes() {
     try {
         routesList.innerHTML = '<div class="loading">Carregando rotas...</div>';
         
-        let url = `${API_BASE_URL}/route-watches`;
+        let url = `${API_BASE_URL}/route-watches/`;
         if (filterActive) {
             url += '?is_active=true';
         }
@@ -441,7 +441,7 @@ async function handleEditRoute(event) {
 async function loadRoutesForHistory() {
     try {
         // Buscar apenas rotas ativas
-        const response = await fetch(`${API_BASE_URL}/route-watches?is_active=true`);
+        const response = await fetch(`${API_BASE_URL}/route-watches/?is_active=true`);
         if (!response.ok) throw new Error('Erro ao carregar rotas');
         
         const routes = await response.json();
