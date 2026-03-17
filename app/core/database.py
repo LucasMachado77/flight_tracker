@@ -4,9 +4,27 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from app.core.config import settings
 
-# Create SQLAlchemy engine
+
+def get_normalized_database_url() -> str:
+    """
+    Normaliza a URL de banco de dados para o formato esperado pelo SQLAlchemy.
+
+    - Se for PostgreSQL simples (`postgresql://`), converte para usar o driver psycopg3
+      explícito (`postgresql+psycopg://`), que é compatível com o pacote `psycopg[binary]`.
+    - Para outros bancos (ex.: SQLite), retorna a URL original sem alterações.
+    """
+    # Se a URL começar com o esquema padrão do PostgreSQL, forçamos o uso do driver psycopg3
+    if settings.database_url.startswith("postgresql://"):
+        return settings.database_url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+    # Para SQLite (ou qualquer outro esquema), usamos a URL como está
+    return settings.database_url
+
+
+# Cria o engine do SQLAlchemy usando a URL normalizada
 engine = create_engine(
-    settings.database_url,
+    get_normalized_database_url(),
+    # Para SQLite, é necessário este connect_args específico; para outros bancos, deixamos vazio
     connect_args={"check_same_thread": False} if "sqlite" in settings.database_url else {},
     echo=False
 )
