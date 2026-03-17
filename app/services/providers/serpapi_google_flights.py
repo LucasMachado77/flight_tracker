@@ -180,33 +180,31 @@ class SerpApiGoogleFlightsProvider:
             if not flights:
                 return None
             
-            # Primeiro voo é ida, último é volta
+            # Primeiro voo é ida
             outbound = flights[0]
-            inbound = flights[-1] if len(flights) > 1 else None
             
             # Extrair informações de horários mais detalhadas
             departure_time = None
             return_time = None
             
+            # Comentário (pt-BR): para a ida usamos o primeiro trecho
             if outbound and "departure_airport" in outbound:
                 departure_time = outbound["departure_airport"].get("time")
                 # Tentar também "departure_time" se "time" não existir
                 if not departure_time:
                     departure_time = outbound.get("departure_time")
             
-            if inbound:
-                # Comentário (pt-BR): tentar várias fontes de horário no trecho de volta,
-                # pois a SerpApi pode variar o campo usado dependendo do tipo de resultado.
-                if "arrival_airport" in inbound:
-                    return_time = inbound["arrival_airport"].get("time")
-                # Tentar também "arrival_time" se "time" não existir
-                if not return_time:
-                    return_time = inbound.get("arrival_time")
-                # Fallback extra: em alguns casos só há horário de partida do trecho final
-                if not return_time and "departure_airport" in inbound:
-                    return_time = inbound["departure_airport"].get("time")
-                if not return_time:
-                    return_time = inbound.get("departure_time")
+            # Comentário (pt-BR): para a volta, percorremos todos os trechos e pegamos
+            # o último horário de chegada conhecido (melhor aproximação da chegada final).
+            for segment in flights:
+                candidate = None
+                if "arrival_airport" in segment:
+                    candidate = segment["arrival_airport"].get("time")
+                if not candidate:
+                    candidate = segment.get("arrival_time")
+                
+                if candidate:
+                    return_time = candidate
             
             # Converter para formato ISO se necessário
             if departure_time and not departure_time.endswith('Z') and 'T' not in departure_time:
@@ -214,7 +212,7 @@ class SerpApiGoogleFlightsProvider:
                 if len(departure_time) == 10:  # YYYY-MM-DD
                     departure_time = departure_time + "T12:00:00"
             
-            if return_time and not return_time.endswith('Z') and 'T' not in return_time:
+            if return_time and isinstance(return_time, str) and not return_time.endswith('Z') and 'T' not in return_time:
                 # Se for apenas data, adicionar horário padrão
                 if len(return_time) == 10:  # YYYY-MM-DD
                     return_time = return_time + "T12:00:00"

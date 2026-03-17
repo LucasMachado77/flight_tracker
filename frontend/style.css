@@ -231,7 +231,8 @@ header p {
 /* Routes Grid */
 .routes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    /* Comentário (pt-BR): até 4 cards por linha em telas grandes, mantendo largura confortável */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
     margin-top: 20px;
 }
@@ -328,6 +329,17 @@ header p {
     padding: 15px;
     margin-bottom: 10px;
     border-radius: 0 6px 6px 0;
+}
+
+/* Comentário (pt-BR): destaque visual para menor e maior preço no histórico */
+.history-item-cheapest {
+    border-left-color: #28a745; /* verde */
+    background: #e9f7ef;
+}
+
+.history-item-most-expensive {
+    border-left-color: #dc3545; /* vermelho */
+    background: #fbeaea;
 }
 
 .history-header {
@@ -560,6 +572,23 @@ header p {
         border-bottom-color: #667eea;
         border-left: 4px solid #667eea;
     }
+}
+
+/* Comentário (pt-BR): centralizar o formulário de adicionar rota sem cortar o restante da aba */
+.route-form {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* Comentário (pt-BR): centralizar o título da seção de adicionar rota */
+#add-route-tab > h2 {
+    text-align: center;
+}
+
+/* Comentário (pt-BR): centralizar o botão principal de adicionar rota */
+.route-form button[type="submit"] {
+    display: block;
+    margin: 20px auto 0 auto;
 }
 
 /* Animations */

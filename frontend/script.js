@@ -502,7 +502,18 @@ async function loadHistory() {
             return;
         }
         
-        historyContent.innerHTML = history.map(item => createHistoryItem(item)).join('');
+        // Comentário (pt-BR): identifica menor e maior preço da lista para destacar visualmente
+        const prices = history.map(item => item.price_total).filter(price => typeof price === 'number');
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        
+        const itemsWithFlags = history.map(item => ({
+            ...item,
+            isCheapest: item.price_total === minPrice,
+            isMostExpensive: item.price_total === maxPrice
+        }));
+        
+        historyContent.innerHTML = itemsWithFlags.map(item => createHistoryItem(item)).join('');
         
     } catch (error) {
         console.error('Erro ao carregar histórico:', error);
@@ -550,8 +561,15 @@ function createHistoryItem(item) {
         ? ` (≈ ${item.currency} ${pricePerPassenger.toFixed(2)} por pessoa)`
         : '';
 
+    const itemClasses = ['history-item'];
+    if (item.isCheapest) {
+        itemClasses.push('history-item-cheapest');
+    } else if (item.isMostExpensive) {
+        itemClasses.push('history-item-most-expensive');
+    }
+
     return `
-        <div class="history-item">
+        <div class="${itemClasses.join(' ')}">
             <div class="history-header">
                 <div class="history-price">
                     ${item.currency} ${item.price_total}${perPassengerInfo}
@@ -573,7 +591,6 @@ function createHistoryItem(item) {
                 </div>
                 <div><strong>Voo de Ida:</strong> ${departureFormatted}</div>
                 <div><strong>Voo de Volta:</strong> ${returnFormatted}</div>
-                <div><strong>Provider:</strong> ${item.provider}</div>
             </div>
         </div>
     `;
