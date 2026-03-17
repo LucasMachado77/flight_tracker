@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Price Tracker</title>
+    <link rel="icon" type="image/png" href="/static/favicon/android-chrome-192x192.png">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-plane"></i> Flight Price Tracker</h1>
+            <p>Monitore preços de passagens aéreas e receba alertas no Telegram</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('routes', event)">
+                <i class="fas fa-route"></i> Minhas Rotas
+            </button>
+            <button class="tab-button" onclick="showTab('add-route', event)">
+                <i class="fas fa-plus"></i> Adicionar Rota
+            </button>
+            <button class="tab-button" onclick="showTab('history', event)">
+                <i class="fas fa-chart-line"></i> Histórico
+            </button>
+            <button class="tab-button" onclick="showTab('admin', event)">
+                <i class="fas fa-cog"></i> Admin
+            </button>
+        </div>
+
+        <!-- Tab: Minhas Rotas -->
+        <div id="routes-tab" class="tab-content active">
+            <div class="section-header">
+                <h2>Rotas Monitoradas</h2>
+                <button class="btn btn-secondary" onclick="loadRoutes()">
+                    <i class="fas fa-sync"></i> Atualizar
+                </button>
+            </div>
+            
+            <div class="filters">
+                <label>
+                    <input type="checkbox" id="filter-active" checked onchange="loadRoutes()">
+                    Apenas rotas ativas
+                </label>
+            </div>
+
+            <div id="routes-list" class="routes-grid">
+                <div class="loading">Carregando rotas...</div>
+            </div>
+        </div>
+
+        <!-- Tab: Adicionar Rota -->
+        <div id="add-route-tab" class="tab-content">
+            <h2>Adicionar Nova Rota</h2>
+            
+            <form id="route-form" class="route-form">
+                <div class="form-section">
+                    <h3>🎯 Como Funciona a Busca</h3>
+                    <div class="info-box" id="search-explanation">
+                        <p><strong>Janela de Busca Inteligente:</strong></p>
+                        <p>• <strong>Data de Ida:</strong> A partir de quando você pode viajar</p>
+                        <p>• <strong>Data de Volta:</strong> Até quando você pode voltar</p>
+                        <p>• <strong>O sistema encontra a combinação mais barata</strong> dentro dessa janela</p>
+                        <p>• Exemplo: Janela 01/09 até 06/09 → Melhor oferta: ida 01/09 + volta 02/09</p>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>📅 Tipo de Busca</h3>
+                    <div class="form-group">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="flexible_dates" checked onchange="toggleDateMode()">
+                            <span class="toggle-switch"></span>
+                            <span class="toggle-text">
+                                <span class="flexible-text">🎯 Datas Flexíveis (Janela de Busca)</span>
+                                <span class="exact-text">📍 Datas Exatas</span>
+                            </span>
+                        </label>
+                        <div class="date-mode-info">
+                            <div id="flexible-info" class="mode-info active">
+                                <strong>Datas Flexíveis:</strong> Encontra a combinação mais barata dentro da janela de datas
+                            </div>
+                            <div id="exact-info" class="mode-info">
+                                <strong>Datas Exatas:</strong> Busca voos apenas nas datas específicas escolhidas
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="origin">Origem (Código IATA)</label>
+                        <input type="text" id="origin" maxlength="3" placeholder="LIS" required>
+                        <small>Ex: LIS (Lisboa), OPO (Porto)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destino (Código IATA)</label>
+                        <input type="text" id="destination" maxlength="3" placeholder="GRU" required>
+                        <small>Ex: GRU (São Paulo), NYC (Nova York)</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="departure_date" id="departure-label">Data de Ida (início da janela)</label>
+                        <input type="date" id="departure_date" required>
+                        <small id="departure-help">Data mais cedo que você pode viajar</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="return_date" id="return-label">Data de Volta (fim da janela)</label>
+                        <input type="date" id="return_date" required>
+                        <small id="return-help">Data mais tarde que você pode voltar</small>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="adults">Passageiros</label>
+                        <select id="adults" required>
+                            <option value="1">1 adulto</option>
+                            <option value="2">2 adultos</option>
+                            <option value="3">3 adultos</option>
+                            <option value="4">4 adultos</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cabin_class">Classe</label>
+                        <select id="cabin_class" required>
+                            <option value="ECONOMY">Econômica</option>
+                            <option value="PREMIUM_ECONOMY">Econômica Premium</option>
+                            <option value="BUSINESS">Executiva</option>
+                            <option value="FIRST">Primeira Classe</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="currency">Moeda</label>
+                        <select id="currency" required>
+                            <option value="EUR">EUR (Euro)</option>
+                            <option value="USD">USD (Dólar)</option>
+                            <option value="BRL">BRL (Real)</option>
+                            <option value="GBP">GBP (Libra)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="check_interval_minutes">Intervalo de Verificação</label>
+                        <select id="check_interval_minutes" required>
+                            <option value="180">3 horas</option>
+                            <option value="360" selected>6 horas</option>
+                            <option value="720">12 horas</option>
+                            <option value="1440">24 horas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Configurações de Alerta</h3>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="notify_on_new_low" checked>
+                            Receber alertas de novos menores preços
+                        </label>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="min_price_difference">Diferença Mínima (opcional)</label>
+                            <input type="number" id="min_price_difference" step="0.01" placeholder="50.00">
+                            <small>Só alertar se economizar mais que este valor</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="alert_cooldown_hours">Cooldown de Alertas (horas)</label>
+                            <input type="number" id="alert_cooldown_hours" placeholder="24">
+                            <small>Tempo mínimo entre alertas</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="target_price">Preço Alvo (opcional)</label>
+                        <input type="number" id="target_price" step="0.01" placeholder="500.00">
+                        <small>Preço que você gostaria de pagar</small>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Adicionar Rota
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab: Histórico -->
+        <div id="history-tab" class="tab-content">
+            <h2>Histórico de Preços</h2>
+            
+            <div class="form-group">
+                <label for="route-select">Selecionar Rota</label>
+                <select id="route-select" onchange="loadHistory()">
+                    <option value="">Selecione uma rota...</option>
+                </select>
+            </div>
+
+            <div id="history-content">
+                <p class="text-muted">Selecione uma rota para ver o histórico de preços</p>
+            </div>
+        </div>
+
+        <!-- Tab: Admin -->
+        <div id="admin-tab" class="tab-content">
+            <h2>Administração</h2>
+            
+            <div class="admin-section">
+                <h3>Status do Sistema</h3>
+                <div id="system-status" class="status-card">
+                    <div class="loading">Carregando status...</div>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>Ações Administrativas</h3>
+                <div class="admin-actions">
+                    <button class="btn btn-primary" onclick="forceCheckAll()">
+                        <i class="fas fa-sync"></i> Forçar Verificação de Todas as Rotas
+                    </button>
+                    <button class="btn btn-secondary" onclick="checkSystemHealth()">
+                        <i class="fas fa-heartbeat"></i> Verificar Saúde do Sistema
+                    </button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>Informações</h3>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h4>Verificação Automática</h4>
+                        <p>O sistema verifica automaticamente os preços das rotas ativas baseado no intervalo configurado para cada rota (padrão: 6 horas).</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>Scheduler em Background</h4>
+                        <p>O scheduler roda junto com a API, não é necessário executar processos separados.</p>
+                    </div>
+                    <div class="info-card">
+                        <h4>Alertas no Telegram</h4>
+                        <p>Quando um novo menor preço histórico é detectado, você recebe uma notificação automática no Telegram.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar rota -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar Rota</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-route-id">
+                    
+                    <div class="form-section">
+                        <h4>📅 Tipo de Busca</h4>
+                        
+                        <div class="form-group">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="edit-flexible-dates" checked onchange="toggleEditDateMode()">
+                                <span class="toggle-switch"></span>
+                                <span class="toggle-text">
+                                    <span class="flexible-text">🎯 Datas Flexíveis</span>
+                                    <span class="exact-text">📍 Datas Exatas</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-departure-date" id="edit-departure-label">Data de Ida (início da janela)</label>
+                                <input type="date" id="edit-departure-date">
+                                <small id="edit-departure-help">Data mais cedo que você pode viajar</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-return-date" id="edit-return-label">Data de Volta (fim da janela)</label>
+                                <input type="date" id="edit-return-date">
+                                <small id="edit-return-help">Data mais tarde que você pode voltar</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Status e Configurações Básicas</h4>
+                        
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit-is-active">
+                                Rota ativa
+                            </label>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-adults">Passageiros</label>
+                                <select id="edit-adults">
+                                    <option value="1">1 adulto</option>
+                                    <option value="2">2 adultos</option>
+                                    <option value="3">3 adultos</option>
+                                    <option value="4">4 adultos</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-cabin-class">Classe</label>
+                                <select id="edit-cabin-class">
+                                    <option value="ECONOMY">Econômica</option>
+                                    <option value="PREMIUM_ECONOMY">Econômica Premium</option>
+                                    <option value="BUSINESS">Executiva</option>
+                                    <option value="FIRST">Primeira Classe</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-currency">Moeda</label>
+                                <select id="edit-currency">
+                                    <option value="EUR">EUR (Euro)</option>
+                                    <option value="USD">USD (Dólar)</option>
+                                    <option value="BRL">BRL (Real)</option>
+                                    <option value="GBP">GBP (Libra)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-max-stops">Escalas Máximas</label>
+                                <select id="edit-max-stops">
+                                    <option value="">Qualquer</option>
+                                    <option value="0">Direto</option>
+                                    <option value="1">1 escala</option>
+                                    <option value="2">2 escalas</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-check-interval">Intervalo de Verificação</label>
+                            <select id="edit-check-interval">
+                                <option value="180">3 horas</option>
+                                <option value="360">6 horas</option>
+                                <option value="720">12 horas</option>
+                                <option value="1440">24 horas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Configurações de Alerta</h4>
+                        
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="edit-notify-on-new-low">
+                                Receber alertas de novos menores preços
+                            </label>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="edit-min-price-difference">Diferença Mínima</label>
+                                <input type="number" id="edit-min-price-difference" step="0.01" placeholder="50.00">
+                                <small>Só alertar se economizar mais que este valor</small>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-alert-cooldown">Cooldown (horas)</label>
+                                <input type="number" id="edit-alert-cooldown" placeholder="24">
+                                <small>Tempo mínimo entre alertas</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-target-price">Preço Alvo</label>
+                            <input type="number" id="edit-target-price" step="0.01" placeholder="500.00">
+                            <small>Preço que você gostaria de pagar</small>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
