@@ -6,6 +6,8 @@ uvicorn[standard]==0.27.0
 # sqlalchemy 2.1.0 não existe como release estável; usamos 2.0.48, que é a última versão estável disponível e compatível com Python 3.13
 sqlalchemy==2.0.48
 alembic==1.13.1
+# Driver PostgreSQL usado pelo SQLAlchemy (psycopg2 tradicional); necessário para conectar no Postgres do Railway
+psycopg2-binary==2.9.9
 
 # Data Validation
 pydantic==2.10.4
